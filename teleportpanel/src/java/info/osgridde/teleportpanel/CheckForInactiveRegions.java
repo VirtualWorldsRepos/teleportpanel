@@ -7,12 +7,12 @@ package info.osgridde.teleportpanel;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Resource;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceUnit;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -26,15 +26,13 @@ import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 import org.im4java.core.IM4JavaException;
-import org.im4java.core.IMOperation;
-import org.im4java.core.MontageCmd;
 
 /**
  *
  * @author Akira Sonoda
  */
-@WebServlet(name = "MontagePics", urlPatterns = {"/MontagePics"})
-public class MontagePics extends HttpServlet {
+@WebServlet(name = "CheckForInactiveRegions", urlPatterns = {"/CheckForInactiveRegions"})
+public class CheckForInactiveRegions extends HttpServlet {
 
     @PersistenceUnit
     //The emf corresponding to
@@ -67,7 +65,7 @@ public class MontagePics extends HttpServlet {
         PrintWriter out = response.getWriter();
 
         try {
-            // HTMLHelper.printHTMLHeader(out);
+            HTMLHelper.printHTMLHeader(out);
 
             Map<String, String[]> paramMap = request.getParameterMap();
             if (paramMap.size() != 4) {
@@ -82,35 +80,20 @@ public class MontagePics extends HttpServlet {
 
                 RegionService regionService = new RegionService(em);
 
-                Vector<String> imageNames = new Vector<String>();
-
-                for (int j = maxY; j >= minY; j--) {
-                    for (int i = minX; i <= maxX; i++) {
-                        aRegion = regionService.getRegionByCoord(i, j);
-                        imageNames.addElement(filePath + aRegion.getUuid() + ".jpeg");
-                    }
-                }
-
-                IMOperation ops = new IMOperation();
-                int count = 0;
-
-                ops.geometry((maxX - minX) * 2, (maxY - minY) * 2);
+                out.println("<h2>The following Regions are no longer registered</h2>");
 
                 for (int i = minX; i <= maxX; i++) {
                     for (int j = minY; j <= maxY; j++) {
-                        ops.addImage(imageNames.get(count));
-                        count++;
+                        try {
+                            aRegion = regionService.getRegionByCoord(i, j);
+                        } catch (NoResultException ex) {
+                            out.println(Integer.toString(i) +" "+ Integer.toString(j) + "<br>" );
+                        }
                     }
                 }
 
-                ops.addImage(picPath + "montage.jpeg");
 
-                MontageCmd mcmd = new MontageCmd();
-                mcmd.run(ops);
-
-                out.print("ok");
-
-                // HTMLHelper.printHTMLFooter(out);
+                HTMLHelper.printHTMLFooter(out);
             }
         } finally {
             out.close();
@@ -131,19 +114,19 @@ public class MontagePics extends HttpServlet {
         try {
             processRequest(request, response);
         } catch (InterruptedException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IM4JavaException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NotSupportedException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (SystemException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (RollbackException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (HeuristicMixedException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (HeuristicRollbackException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -160,19 +143,19 @@ public class MontagePics extends HttpServlet {
         try {
             processRequest(request, response);
         } catch (InterruptedException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IM4JavaException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NotSupportedException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (SystemException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (RollbackException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (HeuristicMixedException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (HeuristicRollbackException ex) {
-            Logger.getLogger(MontagePics.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CheckForInactiveRegions.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

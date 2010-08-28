@@ -6,6 +6,8 @@
 package info.osgridde.teleportpanel;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 
 /**
@@ -51,6 +53,7 @@ public class RegionService {
     }
 
     public Region getRegionByCoord(int xcoord, int ycoord) {
+
         return( em.createNamedQuery("Region.findByCoord", Region.class)
                 .setParameter("xcoord", xcoord)
                 .setParameter("ycoord", ycoord)

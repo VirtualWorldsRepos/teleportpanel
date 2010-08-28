@@ -11,9 +11,11 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>JSP Page</title>
+        <title>Teleport Tafel Mainpage</title>
     </head>
     <body>
-        <h1>This project does not have any GUI right now!</h1>
+        <h1>Useful Links</h1>
+        <a href="/teleportpanel/CreateRegions"> Synchronize the Regions Database </a><br>
+        <a href="/teleportpanel/CheckForInactiveRegions?minx=10400&maxx=10420&miny=10065&maxy=10085"> Check for Inactive regions in Dereos </a>
     </body>
 </html>
