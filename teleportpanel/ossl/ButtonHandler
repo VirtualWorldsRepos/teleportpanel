@@ -1,0 +1,95 @@
+// This file is part of the teleportpanel distribution
+//
+// Copyright(c) 2010 Akira Sonoda
+//
+// This file may be licensed under the terms of of the
+// GNU General Public License Version 2 (the ``GPL'').
+//
+// Software distributed under the License is distributed
+// on an ``AS IS'' basis, WITHOUT WARRANTY OF ANY KIND, either
+// express or implied. See the GPL for the specific language
+// governing rights and limitations.
+//
+// You should have received a copy of the GPL along with this
+// program. If not, go to http://www.gnu.org/licenses/gpl.html
+// or write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+//
+// Handler for clickable buttons
+
+// Consts
+string serverName = "suai.dyndns.org:8080";
+string controlRegion = "DEREOS";
+integer commChannel = 773344;
+integer listen_handle = 0;
+
+key avatar;
+integer timeRez;
+integer zeitspanne=120;
+integer destination_id = 0;
+
+default {
+    on_rez(integer start_param) {
+        // llOwnerSay("rezzed with the number " + (string) start_param);
+        destination_id = start_param;
+        timeRez=llGetUnixTime();
+    }
+
+    state_entry() {
+        destination_id = llGetStartParameter();
+        listen_handle = llListen(commChannel, "", NULL_KEY, "");
+        llSetTimerEvent(60); // Intervall in Sekunden bei der eine Pruefung statt findet
+    }
+
+    touch_start(integer total_number) {
+        // Hole der Eintraege ab Datenbank
+        avatar = llDetectedKey(0);
+        string theme = llGetObjectName();
+        llHTTPRequest("http://"+serverName+"/teleportpanel/GetRegionDataById?id="+(string) destination_id,[],"");
+    }
+
+    listen( integer channel, string name, key id, string message ) {
+        // llOwnerSay(message);
+        if( message == "die") {
+            llListenRemove(listen_handle);
+            llDie(); //Selbstzerstoerung vollzogen
+        }
+    }
+
+    http_response(key rid, integer status, list metadata, string msg) {
+        llStringTrim(msg,STRING_TRIM);
+
+        list infos = llParseString2List(msg,[";"],[]);
+        if(llGetListLength(infos) == 4) {
+
+            string destination = llList2String(infos, 0);
+            vector landingPoint = <
+                (float) llList2String(infos, 1),
+                (float) llList2String(infos, 2),
+                (float) llList2String(infos, 3) >;
+            vector lookAt = <1.0,1.0,1.0>;
+            llInstantMessage(avatar, "Teleporting you to : "+destination);
+            osTeleportAgent(avatar,
+                destination,
+                landingPoint,
+                lookAt);
+
+        } else {
+            llSay(0,"Incorrect Information received you'll not be teleported");
+        }
+
+    }
+
+
+    timer() {
+        integer pruefTime=llGetUnixTime();
+        integer intervall = (pruefTime-timeRez);
+
+        if (intervall >= zeitspanne) {
+            llListenRemove(listen_handle);
+            llDie(); 
+        }
+
+    }
+
+}

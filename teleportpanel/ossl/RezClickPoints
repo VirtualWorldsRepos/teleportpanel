@@ -1,0 +1,39 @@
+// This file is part of the teleportpanel distribution
+//
+// Copyright(c) 2010 Akira Sonoda
+//
+// This file may be licensed under the terms of of the
+// GNU General Public License Version 2 (the ``GPL'').
+//
+// Software distributed under the License is distributed
+// on an ``AS IS'' basis, WITHOUT WARRANTY OF ANY KIND, either
+// express or implied. See the GPL for the specific language
+// governing rights and limitations.
+//
+// You should have received a copy of the GPL along with this
+// program. If not, go to http://www.gnu.org/licenses/gpl.html
+// or write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+//
+// This script reads the records out of the datebase to the given theme,
+// which is noted in the description of the prim, and rezzes
+// a clickable dot at the given locations in order to let the user
+// teleport to that location
+
+// Consts
+integer commChannel = 773344;
+
+
+default {
+    state_entry() {
+        llResetScript();
+    }
+
+    on_rez(integer start_param) {
+        llResetScript();
+    }
+
+    touch (integer num) {
+        llSay(commChannel, "die");
+    }
+}

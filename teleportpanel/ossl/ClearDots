@@ -1,0 +1,179 @@
+// This file is part of the teleportpanel distribution
+//
+// Copyright(c) 2010 Akira Sonoda
+//
+// This file may be licensed under the terms of of the
+// GNU General Public License Version 2 (the ``GPL'').
+//
+// Software distributed under the License is distributed
+// on an ``AS IS'' basis, WITHOUT WARRANTY OF ANY KIND, either
+// express or implied. See the GPL for the specific language
+// governing rights and limitations.
+//
+// You should have received a copy of the GPL along with this
+// program. If not, go to http://www.gnu.org/licenses/gpl.html
+// or write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+//
+// This script reads the records out of the datebase to the given theme,
+// which is noted in the description of the prim, and rezzes
+// a clickable dot at the given locations in order to let the user
+// teleport to that location
+
+// Consts
+string serverName = "suai.dyndns.org:8080"; // ToDo eliminate
+string controlRegion = "DEREOS"; // ToDo eliminate
+integer commChannel = 773344;
+string pushButton = "";
+
+float posPerRegion = 0.080; // ToDo Eliminate
+
+list objectInfo = [];
+string objectName = "";
+
+// Temporary solution in a next version the starting points will be
+// calculated using the given coordinate systems
+float startx = 0.0; // ToDo eliminate
+float starty = 0.0; // ToDo eliminate
+float startz = 0.0; // ToDo eliminate
+
+string theme = "";
+list places = [];
+integer maxElements = 0;
+integer currentElement = 0;
+
+
+
+initVars() {
+    theme = "";
+    places = [];
+    maxElements = 0;
+    currentElement = 0;
+}
+
+getOffsets( string desc ) {
+    list offsetList = llParseString2List(desc,[";"],[]);
+    startx = (float) llList2String(offsetList,0);
+    starty = (float) llList2String(offsetList,1);
+    startz = (float) llList2String(offsetList,2);
+
+}
+
+// dumpList(list aList) {
+//        llOwnerSay("List Dump:");
+//        integer len = llGetListLength(aList);
+//        integer i = 0;
+//        for (; i < len; ++i) {
+//            llOwnerSay("Element["+(string) i +"]: " + llList2String(aList, i) );
+//        }
+//        llOwnerSay("End List Dump --------------------------------------");
+// }
+
+list getStride( list src, integer start, integer end, integer stride ) {
+    return( llList2List( src, start * stride, (end * stride) + stride -1 ) );
+}
+
+
+default {
+    state_entry() {
+        initVars();
+        llResetScript();
+    }
+
+    on_rez(integer start_param) {
+        initVars();
+        llResetScript();
+    }
+
+    // reading the databases in order to get the coordinates used for rezzing
+    // the clicable dots
+    touch_start(integer total_number) {
+        objectInfo = llGetObjectDetails( llGetKey(), [OBJECT_NAME,OBJECT_DESC] );
+        objectName = llList2String(objectInfo,0);
+        pushButton = objectName + "Point";
+        getOffsets(llList2String(objectInfo,1));
+        // send a message in order to delete any still existing dots
+        llSay(commChannel, "die");
+        // Read the database
+        string theme = llGetObjectName();
+        llHTTPRequest("http://"+serverName+"/teleportpanel/GetRegionsForTheme?cr="+controlRegion+"&th="+theme,[],"");
+    }
+
+
+    http_response(key rid, integer status, list metadata, string msg) {
+        llStringTrim(msg,STRING_TRIM);
+        // llOwnerSay(msg);
+
+        list infoLines = llParseString2List(msg,["\n"],[]);
+        // dumpList(infoLines);
+
+        integer len = llGetListLength(infoLines);
+        integer i = 0;
+        list infos;
+        for (; i < len; ++i) {
+            infos = llParseString2List(llList2String(infoLines, i),[";"],[]);
+            if(llGetListLength(infos) == 3) {
+                places = places + infos;
+            } else {
+                llSay(0, "Incorrect LandInformation nothing will be rezzed");
+            }
+        }
+
+        // dumpList(places);
+
+        integer placesListSize = llGetListLength(places);
+        if ( (placesListSize % 3) == 0 ) {
+            maxElements = placesListSize / 3;
+        } else {
+            llSay(0,"Something is wrong with the Info List");
+            // dumpList(places);
+        }
+        // dumpList(infoList);
+
+        // because the controller increments first before delegating the work
+        // i subtract 1 haer in order to have the first index element at 0
+        currentElement = currentElement - 1;
+
+        state controller;
+
+    }
+
+}
+
+
+// Processing of the database elements
+state controller {
+    state_entry() {
+        currentElement = currentElement + 1;
+        if (currentElement == maxElements) {
+            state default; // Processing complete
+        } else {
+            state rezzer; // There are more items to process
+        }
+
+    }
+}
+
+state rezzer {
+    state_entry() {
+        list eintrag = getStride(places,currentElement,currentElement,3);
+        float desty = 0;
+        float destz = 0;
+
+        vector myPos = llGetPos();
+        rotation myRot = llGetRot();
+
+        float yfactor = (float) llList2String(eintrag,1);
+        desty = desty + (yfactor * posPerRegion);
+        float zfactor = (float) llList2String(eintrag,2);
+        destz = destz + (zfactor * posPerRegion);
+        vector offset = <0.0, desty, destz>;
+        vector reloffset = <startx,starty,startz> + offset;
+        vector rezPos = myPos+reloffset*myRot;
+        rotation rezRot = llEuler2Rot(<90.0,90.0,0.0> * DEG_TO_RAD );     // Create a rotation constant ;
+
+        llRezAtRoot(pushButton, rezPos, ZERO_VECTOR, rezRot*myRot, (integer) llList2String(eintrag,0) );
+
+        state controller;
+    }
+}

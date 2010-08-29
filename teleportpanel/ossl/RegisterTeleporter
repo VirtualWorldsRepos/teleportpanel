@@ -1,0 +1,210 @@
+// This file is part of the teleportpanel distribution
+//
+// Copyright(c) 2010 Akira Sonoda
+//
+// This file may be licensed under the terms of of the
+// GNU General Public License Version 2 (the ``GPL'').
+//
+// Software distributed under the License is distributed
+// on an ``AS IS'' basis, WITHOUT WARRANTY OF ANY KIND, either
+// express or implied. See the GPL for the specific language
+// governing rights and limitations.
+//
+// You should have received a copy of the GPL along with this
+// program. If not, go to http://www.gnu.org/licenses/gpl.html
+// or write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+//
+// Registers the teleoprt places in the database
+// The themes and coordinates are taken from the Landinfo description
+//
+// Constants
+// ToDo eliminate the constants in the scripts
+integer stride = 4; // Number of elements in each landinfo description line
+list landinforeqd = [PARCEL_DETAILS_DESC];
+string serverName = "suai.dyndns.org:8080";
+string controlRegion = "DEREOS";
+integer dereosX = 10400;
+integer dereosY = 10065;
+integer dereosMaxX = 10420;
+integer dereosMaxY = 10085;
+
+string regionName = "";
+string infoDetails = "";
+
+list infoList = [];
+integer maxElements = 0;
+integer currentElement = 0;
+
+
+integer simxcoord = 0;
+integer simycoord = 0;
+
+
+dumpList(list aList) {
+
+        llOwnerSay("List Dump:");
+
+        integer len = llGetListLength(aList);
+        integer i = 0;
+        for (; i < len; ++i) {
+            llOwnerSay("Element["+(string) i +"]: " + llList2String(aList, i) );
+        }
+
+        llOwnerSay("End List Dump --------------------------------------");
+
+}
+
+
+list getStride( list src, integer start, integer end, integer stride ) {
+    return( llList2List( src, start * stride, (end * stride) + stride -1 ) );
+}
+
+
+default
+{
+    state_entry() {
+        regionName = "";
+        infoDetails = "";
+        infoList = [];
+        maxElements = 0;
+        integer currentElement = 0;
+        simxcoord = 0;
+        simycoord = 0;
+        llResetScript();
+    }
+
+    touch(integer start_param) {
+        regionName = llGetRegionName();
+        llHTTPRequest("http://"+serverName+"/teleportpanel/GetRegionCoordsByName?name="+regionName,[],"");
+    }
+
+    on_rez(integer start_param) {
+        llResetScript();
+    }
+
+    http_response(key rid, integer status, list metadata, string msg) {
+        llStringTrim(msg,STRING_TRIM);
+
+        list coords = llParseString2List(msg,[";"],[]);
+
+        integer len = llGetListLength(coords);
+        if ( len == 2 ) {
+            simxcoord = (integer) llList2String(coords, 0);
+            simycoord = (integer) llList2String(coords, 1);
+
+            // The region has to be inside of the continent in order to let the
+            // teleportpanel register coordinates
+            if ( ((simxcoord < dereosX) || (simxcoord > dereosMaxX)) || ((simycoord < dereosY) || (simycoord > dereosMaxY))  ) {
+                llSay(0, "You can only register your regions if your Region is within the Dereos Continent" );
+            } else {
+                state inspect_desc;
+            }
+        } else {
+            llSay(0, "Could not find: " + regionName );
+        }
+
+    }
+
+}
+
+state inspect_desc {
+
+    state_entry() {
+        list details = llGetParcelDetails(llGetPos(), landinforeqd );
+        infoDetails = llList2String(details ,0);
+
+        list infoLines = llParseString2List(infoDetails,["\n"],[]);
+
+        integer len = llGetListLength(infoLines);
+        integer i = 0;
+        list infos;
+        for (; i < len; ++i) {
+            infos = llParseString2List(llList2String(infoLines, i),[";"],[]);
+            if(llGetListLength(infos) == 4) {
+                infoList = infoList + infos;
+            } else {
+                llSay(0, "Incorrect LandInformation nothing will be registered");
+                state default;
+            }
+        }
+
+        integer infoListSize = llGetListLength(infoList);
+        if ( (infoListSize % 4) == 0 ) {
+            maxElements = infoListSize / 4;
+        } else {
+            llSay(0, "Something is wrong with the Info List");
+            dumpList(infoList);
+            state default;
+        }
+        // dumpList(infoList);
+
+        // because the controller increments first before delegating the work
+        // i subtract 1 haer in order to have the first index element at 0
+        currentElement = currentElement - 1;
+
+        state cleanup;
+
+    }
+
+}
+
+// To keep the database consistend we first delete all existing records
+state cleanup {
+
+    state_entry() {
+        llHTTPRequest("http://"+serverName+"/teleportpanel/DeleteFromTpTable?cr="+controlRegion+
+            "&dr="+regionName,[],"");
+    }
+
+    http_response(key rid, integer status, list metadata, string msg) {
+        llStringTrim(msg,STRING_TRIM);
+        if( msg == "ok") {
+            state controller;
+        } else {
+            llOwnerSay(msg);
+            state default;
+        }
+    }
+
+}
+
+// for each line in the LandInfo Description the state register_places is set
+state controller {
+    state_entry() {
+        currentElement = currentElement + 1;
+        if (currentElement == maxElements) {
+            state default; // Verarbeitung abgeschlossen
+        } else {
+            state register_places; // Es hat noch sachen zum Registrieren
+        }
+    }
+
+}
+
+// Stores one line of the LandInfo description
+state register_places {
+    state_entry() {
+        list eintrag = getStride(infoList,currentElement,currentElement,4);
+        dumpList(eintrag);
+        llHTTPRequest("http://"+serverName+"/teleportpanel/CreateTpTable?cr="+controlRegion+
+            "&th="+llList2String(eintrag ,0)+
+            "&bx="+(string) (simxcoord - dereosX)+
+            "&by="+(string) (simycoord - dereosY)+
+            "&dr="+regionName+
+            "&dx="+llList2String(eintrag ,1)+
+            "&dy="+llList2String(eintrag ,2)+
+            "&dz="+llList2String(eintrag ,3),[],"");
+    }
+
+    http_response(key rid, integer status, list metadata, string msg) {
+        llStringTrim(msg,STRING_TRIM);
+        if( msg == "ok") {
+            state controller;
+        } else {
+            llOwnerSay(msg);
+            state default;
+        }
+    }
+
+}
