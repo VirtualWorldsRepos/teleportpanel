@@ -59,9 +59,9 @@ public class MontagePics extends HttpServlet {
         int minY = 0;
         int maxY = 0;
 
-        String filePath = "/srv/www/htdocs/webassets/cache/pic/";
-        String picPath = "/srv/www/htdocs/jpeg/";
-        String serverName = "akitest.dyndns.info";
+        String filePath = "/srv/www/vhosts/suai.dyndns.org/webassets/cache/pic/";
+        String picPath = "//srv/www/vhosts/suai.dyndns.org/jpeg/";
+        String serverName = "suai.dyndns.org";
 
         response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();

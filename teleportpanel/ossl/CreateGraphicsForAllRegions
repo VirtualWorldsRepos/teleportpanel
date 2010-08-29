@@ -1,0 +1,117 @@
+// (c) Akira Sonoda 2010
+//
+key regionTexture;
+string regionName;
+string hostname = "suai.dyndns.org";
+
+integer minX = 10400;
+integer maxX = 10420;
+integer minY = 10065;
+integer maxY = 10085;
+
+integer actX = 0;
+integer actY = 0;
+
+
+default {
+    state_entry() {
+
+    }
+
+    touch(integer Num_Detected) {
+        if ( llGetOwner() == llDetectedKey(0) ) {
+            actX = minX-1;
+            actY = minY;
+            state coordinator;
+        } else {
+            llSay(0, "Sorry you are not allowed to call this function");
+        }
+    }
+
+}
+
+
+state coordinator {
+    state_entry() {
+        if ((actX == maxX) && (actY == maxY) ) {
+            actX = minX-1;
+            actY = minY;
+            llSay(0,"Maptiles Created,");
+            llSay(0,"Maptiles Doing the montage,");
+            state montage;
+        } else {
+            if(actX == maxX) {
+              actY = actY+1;
+              actX = minX-1;
+            }
+            state get_name;
+        }
+    }
+
+    state_exit() {
+        actX = actX + 1;
+    }
+}
+
+
+state get_name {
+    state_entry() {
+        llHTTPRequest("http://" + hostname + ":8080/teleportpanel/GetRegionNameByCoords?xc="+actX+"&yc="+actY,[],"");
+    }
+
+    http_response(key rid, integer status, list metadata, string msg) {
+        llStringTrim(msg,STRING_TRIM);
+        regionName = msg;
+        regionTexture = osGetRegionMapTexture(regionName);
+        llOwnerSay (regionName + " with maptile texture: " + (string) regionTexture );
+        state get_texture;
+    }
+
+}
+
+state get_texture {
+
+    state_entry() {
+        // had to tweak the webassets script in order to not return the image but to return
+        // the UUID passed to the script, because I was experiencing problems with the images returned
+        // to the script. 
+        llHTTPRequest("http://"+hostname+"/webassets/osasset.php?id="+(string) regionTexture,[],"");
+    }
+
+    http_response(key rid, integer status, list metadata, string msg) {
+        // llOwnerSay("Result from webassets: "+msg);
+        state update_uuid;
+    }
+}
+
+state update_uuid {
+    state_entry() {
+        llHTTPRequest("http://" + hostname + ":8080/teleportpanel/UpdateRegionUUID?cr="+regionName+"&uuid="+ (string) regionTexture,[],"");
+    }
+
+    http_response(key rid, integer status, list metadata, string msg) {
+        // llOwnerSay (msg);
+        state coordinator;
+    }
+}
+
+
+state montage {
+    state_entry() {
+        llHTTPRequest("http://" + hostname + ":8080/teleportpanel/MontagePics?minx="+(string) minX+"&maxx="+(string) maxX+"&miny="+(string) minY+"&maxy="+(string)maxY,[],"");
+    }
+
+    http_response(key rid, integer status, list metadata, string msg) {
+        llStringTrim(msg,STRING_TRIM);
+        if( msg == "ok") {
+            llSay(0, "Montage ok");
+            llSay(0, "You can check the result here: http://suai.dyndns.org/MontagePic.htm ");
+            state default;
+        } else {
+            llSay(0, "Montage failed");
+            llOwnerSay(msg);
+            state default;
+        }
+    }
+
+}
