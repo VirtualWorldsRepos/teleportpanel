@@ -46,8 +46,9 @@ default {
 
      http_response(key rid, integer status, list metadata, string msg) {
         llStringTrim(msg,STRING_TRIM);
+        llOwnerSay("Message from UpdateConfigurationValue: " + msg );
         if(msg == "ok") {
-             state receiving; // start handling requests
+            state receiving; // start handling requests
         }
     }
 
@@ -135,7 +136,7 @@ state get_texture {
     }
 
     http_response(key rid, integer status, list metadata, string msg) {
-        llOwnerSay("Result from webassets: "+msg);
+        // llOwnerSay("Result from webassets: "+msg);
         state update_uuid;
     }
 }
@@ -154,14 +155,17 @@ state update_uuid {
 
 state montage {
     state_entry() {
-        llHTTPRequest("http://" + hostname + ":8080/teleportpanel/MontagePics?minx="+(string) minX+"&maxx="+(string) maxX+"&miny="+(string) minY+"&maxy="+(string)maxY,[],"");
+        llHTTPRequest("http://" + hostname + ":8080/teleportpanel/MontagePics?minx="+(string) minX+
+            "&maxx="+(string) maxX+"&miny="+(string) minY+
+            "&maxy="+(string)maxY+
+            "&co=DEREOS&re=Zentrale Plaza",[],"");
     }
 
     http_response(key rid, integer status, list metadata, string msg) {
         llStringTrim(msg,STRING_TRIM);
         if( msg == "ok") {
             llSay(0, "Montage ok");
-            llSay(0, "You can check the result here: http://suai.dyndns.org/MontagePic.htm ");
+            llSay(0, "You can check the result here: http://"+ hostname +"/MontagePic.htm ");
             state default;
         } else {
             llSay(0, "Montage failed");
