@@ -88,7 +88,7 @@ public class UpdateConfigurationValue extends HttpServlet {
 
                 } else {
 
-                    aConfiguration.setValue(value);
+                    aConfiguration.setWert(value);
                     em.flush();
                     
                 }

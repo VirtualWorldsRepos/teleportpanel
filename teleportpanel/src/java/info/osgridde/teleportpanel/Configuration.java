@@ -28,7 +28,7 @@ import javax.persistence.Table;
     @NamedQuery(name = "Configuration.findConfiguration", query = "SELECT c FROM Configuration c WHERE c.continent = :continent AND c.region = :region AND c.schluessel = :schluessel"),
     @NamedQuery(name = "Configuration.findByContinent", query = "SELECT c FROM Configuration c WHERE c.continent = :continent"),
     @NamedQuery(name = "Configuration.findByschluessel", query = "SELECT c FROM Configuration c WHERE c.schluessel = :schluessel"),
-    @NamedQuery(name = "Configuration.findByValue", query = "SELECT c FROM Configuration c WHERE c.value = :value"),
+    @NamedQuery(name = "Configuration.findBywert", query = "SELECT c FROM Configuration c WHERE c.wert = :wert"),
     @NamedQuery(name = "Configuration.findByRegion", query = "SELECT c FROM Configuration c WHERE c.region = :region")})
 public class Configuration implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -44,8 +44,8 @@ public class Configuration implements Serializable {
     @Column(name = "schluessel")
     private String schluessel;
     @Basic(optional = false)
-    @Column(name = "value")
-    private String value;
+    @Column(name = "wert")
+    private String wert;
     @Basic(optional = false)
     @Column(name = "region")
     private String region;
@@ -57,11 +57,11 @@ public class Configuration implements Serializable {
         this.id = id;
     }
 
-    public Configuration(Integer id, String continent, String schluessel, String value, String region) {
+    public Configuration(Integer id, String continent, String schluessel, String wert, String region) {
         this.id = id;
         this.continent = continent;
         this.schluessel = schluessel;
-        this.value = value;
+        this.wert = wert;
         this.region = region;
     }
 
@@ -89,12 +89,12 @@ public class Configuration implements Serializable {
         this.schluessel = schluessel;
     }
 
-    public String getValue() {
-        return value;
+    public String getWert() {
+        return wert;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setWert(String wert) {
+        this.wert = wert;
     }
 
     public String getRegion() {

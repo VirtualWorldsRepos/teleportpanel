@@ -45,16 +45,15 @@ public class ConfigurationService {
                   .setParameter("continent", continent).executeUpdate();
     }
 
-    public Configuration getConfigItem( String continent,
+    public Configuration getConfigItem(String continent,
                 String region,
                 String schluessel)  {
 
-        return( em.createNamedQuery( "Configuration.findConfiguration", Configuration.class)
-                .setParameter("continent", continent)
-                .setParameter("region", region)
-                .setParameter("schluessel", schluessel)
-                .getSingleResult()
-                );
+        return( em.createNamedQuery("Configuration.findConfiguration",Configuration.class)
+                .setParameter("continent",continent)
+                .setParameter("region",region)
+                .setParameter("schluessel",schluessel)
+                .getSingleResult() );
     }
 
 }

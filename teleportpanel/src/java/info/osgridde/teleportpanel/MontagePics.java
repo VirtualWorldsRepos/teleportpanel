@@ -7,6 +7,7 @@ package info.osgridde.teleportpanel;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.UUID;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,13 +55,16 @@ public class MontagePics extends HttpServlet {
         assert emf != null;
         EntityManager em = null;
         Region aRegion = null;
+        Configuration configuration = null;
         int minX = 0;
         int maxX = 0;
         int minY = 0;
         int maxY = 0;
-
+        String continent = null;
+        String region = null;
+        
         String filePath = "/srv/www/vhosts/suai.dyndns.org/webassets/cache/pic/";
-        String picPath = "//srv/www/vhosts/suai.dyndns.org/jpeg/";
+        String picPath = "/srv/www/vhosts/suai.dyndns.org/jpeg/";
         String serverName = "suai.dyndns.org";
 
         response.setContentType("text/html;charset=UTF-8");
@@ -70,15 +74,38 @@ public class MontagePics extends HttpServlet {
             // HTMLHelper.printHTMLHeader(out);
 
             Map<String, String[]> paramMap = request.getParameterMap();
-            if (paramMap.size() != 4) {
+            if (paramMap.size() != 6) {
                 out.println("Wrong number of parameters received");
             } else {
                 minX = Integer.parseInt(paramMap.get("minx")[0]);
                 maxX = Integer.parseInt(paramMap.get("maxx")[0]);
                 minY = Integer.parseInt(paramMap.get("miny")[0]);
                 maxY = Integer.parseInt(paramMap.get("maxy")[0]);
+                continent = paramMap.get("co")[0];
+                region = paramMap.get("re")[0];
+
+                utx.begin();
 
                 em = emf.createEntityManager();
+
+
+                ConfigurationService configurationService = new ConfigurationService(em);
+
+                configuration = configurationService.getConfigItem(continent,
+                        region,
+                        "WEBASSETS_PIC_PATH");
+                filePath = configuration.getWert();
+
+                configuration = configurationService.getConfigItem(continent,
+                        region,
+                        "MONTAGE_PIC_PATH");
+                picPath = configuration.getWert();
+
+                configuration = configurationService.getConfigItem(continent,
+                        region,
+                        "SERVER_NAME");
+                serverName = configuration.getWert();
+                
 
                 RegionService regionService = new RegionService(em);
 
@@ -107,6 +134,16 @@ public class MontagePics extends HttpServlet {
 
                 MontageCmd mcmd = new MontageCmd();
                 mcmd.run(ops);
+
+                UUID aUuid = UUID.randomUUID();
+
+                configuration = configurationService.getConfigItem(continent,
+                        region,
+                        "TELEPORT_PANEL_IMAGE");
+                configuration.setWert(aUuid.toString());
+                em.flush();
+                
+                utx.commit();
 
                 out.print("ok");
 

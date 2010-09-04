@@ -76,13 +76,13 @@ public class UpdateMapImage extends HttpServlet {
                         region,
                         "XMLRPC_PORT");
 
-                port = aConfiguration.getValue();
+                port = aConfiguration.getWert();
 
                 aConfiguration = configurationService.getConfigItem(continent,
                         region,
                         "XMLRPC_TPPANEL_CONFIG_CHANNEL");
 
-                channel = aConfiguration.getValue();
+                channel = aConfiguration.getWert();
 
                 XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
                 config.setServerURL(new URL("http://" + serverName + ":" + port));
