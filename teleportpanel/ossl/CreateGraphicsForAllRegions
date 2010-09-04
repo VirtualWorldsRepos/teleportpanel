@@ -1,6 +1,8 @@
 // (c) Akira Sonoda 2010
 //
 key regionTexture;
+key remoteChannel;
+
 string regionName;
 string hostname = "suai.dyndns.org";
 
@@ -12,25 +14,79 @@ integer maxY = 10085;
 integer actX = 0;
 integer actY = 0;
 
-
-default {
-    state_entry() {
-
-    }
-
-    touch(integer Num_Detected) {
-        if ( llGetOwner() == llDetectedKey(0) ) {
-            actX = minX-1;
-            actY = minY;
-            state coordinator;
-        } else {
-            llSay(0, "Sorry you are not allowed to call this function");
-        }
-    }
-
+init() {
+    llOpenRemoteDataChannel(); // create an XML-RPC channel
+    // llOwnerSay("My key is " + (string)llGetKey());
 }
 
 
+default {
+    state_entry() {
+        init();
+    }
+
+    state_exit() {
+        return;
+    }
+
+    on_rez(integer param) {
+        llResetScript();
+    }
+
+    remote_data(integer type, key channel, key message_id, string sender, integer ival, string sval) {
+         if (type == REMOTE_DATA_CHANNEL) { // channel created
+            remoteChannel = channel;
+            llOwnerSay("Ready to receive requests on channel \"" + (string)channel + "\"");
+            llHTTPRequest("http://" + hostname + ":8080/teleportpanel/UpdateConfigurationValue?co=DEREOS&re=Zentrale Plaza&ke=XMLRPC_TPPANEL_CONFIG_CHANNEL&val="+(string)channel,[],"");
+
+         } else {
+             llSay(DEBUG_CHANNEL,"Unexpected event type");
+         }
+     }
+
+     http_response(key rid, integer status, list metadata, string msg) {
+        llStringTrim(msg,STRING_TRIM);
+        if(msg == "ok") {
+             state receiving; // start handling requests
+        }
+    }
+
+
+}
+
+state receiving {
+
+    state_entry() {
+        llOwnerSay("Ready to receive information from outside SL");
+    }
+
+    state_exit() {
+        llOwnerSay("No longer receiving information from outside SL.");
+        llCloseRemoteDataChannel(remoteChannel);
+    }
+
+    on_rez(integer param) {
+        llResetScript();
+    }
+
+    remote_data(integer type, key channel, key message_id, string sender, integer ival, string sval) {
+        if (type == REMOTE_DATA_REQUEST) { // handle requests sent to us
+            llRemoteDataReply(channel,NULL_KEY,"I got it",2008);
+            llOwnerSay("I just received data in "+ llGetRegionName() +
+                       " at position " + (string)llGetPos() + "\n" +
+                       "The string was " +  sval + "\nThe number was " + (string)ival + ".");
+            if(sval == "start") {
+                actX = minX-1;
+                actY = minY;
+                state coordinator;
+            } else {
+                state default;
+            }
+        } else {
+            state default;
+        }
+    }
+}
 state coordinator {
     state_entry() {
         if ((actX == maxX) && (actY == maxY) ) {
@@ -74,12 +130,12 @@ state get_texture {
     state_entry() {
         // had to tweak the webassets script in order to not return the image but to return
         // the UUID passed to the script, because I was experiencing problems with the images returned
-        // to the script. 
+        // to the script.
         llHTTPRequest("http://"+hostname+"/webassets/osasset.php?id="+(string) regionTexture,[],"");
     }
 
     http_response(key rid, integer status, list metadata, string msg) {
-        // llOwnerSay("Result from webassets: "+msg);
+        llOwnerSay("Result from webassets: "+msg);
         state update_uuid;
     }
 }

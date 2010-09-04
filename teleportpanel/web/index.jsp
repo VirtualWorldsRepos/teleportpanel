@@ -16,6 +16,7 @@
     <body>
         <h1>Useful Links</h1>
         <a href="/teleportpanel/CreateRegions"> Synchronize the Regions Database </a><br>
-        <a href="/teleportpanel/CheckForInactiveRegions?minx=10400&maxx=10420&miny=10065&maxy=10085"> Check for Inactive regions in Dereos </a>
+        <a href="/teleportpanel/CheckForInactiveRegions?minx=10400&maxx=10420&miny=10065&maxy=10085"> Check for Inactive regions in Dereos </a><br>
+        <a href="/teleportpanel/UpdateMapImage?co=DEREOS&re=Zentrale Plaza"> Invoke Creation of new MapImage</a>
     </body>
 </html>
