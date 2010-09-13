@@ -75,8 +75,10 @@ default
     }
 
     touch(integer start_param) {
-        regionName = llGetRegionName();
-        llHTTPRequest("http://"+serverName+"/teleportpanel/GetRegionCoordsByName?name="+regionName,[],"");
+        if (llDetectedKey(0) == llGetOwner()) {
+            regionName = llGetRegionName();
+            llHTTPRequest("http://"+serverName+"/teleportpanel/GetRegionCoordsByName?name="+regionName,[],"");
+        }
     }
 
     on_rez(integer start_param) {
