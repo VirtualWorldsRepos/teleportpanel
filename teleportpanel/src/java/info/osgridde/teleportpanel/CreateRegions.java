@@ -95,17 +95,21 @@ public class CreateRegions extends HttpServlet {
                     StringTokenizer aTokenizer = new StringTokenizer(line, ";");
 
                     String regionName = (String) aTokenizer.nextElement();
-                    String xCoord = (String) aTokenizer.nextElement();
-                    String yCoord = (String) aTokenizer.nextElement();
-                    String regionOwner = (String) aTokenizer.nextElement();
+                    try {
+                        int xCoord = Integer.parseInt((String) aTokenizer.nextElement());
+                        int yCoord = Integer.parseInt((String) aTokenizer.nextElement());
+                        String regionOwner = (String) aTokenizer.nextElement();
 
-                    Region aRegion = regionService.createRegion(regionName,
-                            Integer.parseInt(xCoord),
-                            Integer.parseInt(yCoord),
-                            regionOwner,
-                            "OSgrid");
+                        Region aRegion = regionService.createRegion(regionName,
+                                xCoord,
+                                yCoord,
+                                regionOwner,
+                                "OSgrid");
 
-                    em.persist(aRegion);
+                        em.persist(aRegion);
+                    } catch (NumberFormatException e) {
+                        LOG.log(Level.WARNING, e.toString());
+                    }
                 }
             }
 
@@ -181,4 +185,5 @@ public class CreateRegions extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
+    private static final Logger LOG = Logger.getLogger(CreateRegions.class.getName());
 }
