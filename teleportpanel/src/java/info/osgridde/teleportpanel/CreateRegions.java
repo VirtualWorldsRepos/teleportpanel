@@ -69,7 +69,7 @@ public class CreateRegions extends HttpServlet {
 
             regionService.removeAllRegions();
 
-            URL myUrl = new URL("http://www.osgrid.org/elgg/pg/utilities/regions");
+            URL myUrl = new URL("http://www.osgrid.org/index.php/regionlist");
             URLConnection conn = null;
             DataInputStream data = null;
             String line;
@@ -82,7 +82,7 @@ public class CreateRegions extends HttpServlet {
             data = new DataInputStream(conn.getInputStream());
 
             while ((line = data.readLine()) != null) {
-                Pattern p = Pattern.compile("<tr><td>.*</td><td>.*</td><td>.*</td><td>.*</td></tr>");
+                Pattern p = Pattern.compile("</tr><center><tr><td>.*</td><td align=center>.*</td><td align=center>.*</td><td>.*</td></tr>");
                 Matcher m = p.matcher(line.trim());
                 if (m.matches()) {
                     line = line.replaceAll("<tr>", "");
