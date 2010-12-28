@@ -12,8 +12,6 @@ import java.net.URLConnection;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.annotation.Resource;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -82,35 +80,35 @@ public class CreateRegions extends HttpServlet {
             data = new DataInputStream(conn.getInputStream());
 
             while ((line = data.readLine()) != null) {
-                Pattern p = Pattern.compile("</tr><center><tr><td>.*</td><td align=center>.*</td><td align=center>.*</td><td>.*</td></tr>");
-                Matcher m = p.matcher(line.trim());
-                if (m.matches()) {
+                if (line.startsWith("</tr><center><tr><td>")) {
                     line = line.replaceAll("<tr>", "");
                     line = line.replaceAll("</tr>", "");
-                    line = line.replaceAll("<", "#");
-                    line = line.replaceAll(">", "#");
+                    line = line.replaceAll("<center>", "");
+                    line = line.replaceAll(" align=center", "");
                     line = line.replaceAll("/", "");
-                    line = line.replaceAll("#td#", ";");
-
+                    line = line.replaceAll("<td><td>", ";");
+                    line = line.replaceAll("<td>", "");
                     StringTokenizer aTokenizer = new StringTokenizer(line, ";");
+                    while (aTokenizer.hasMoreElements()) {
+                        String regionName = (String) aTokenizer.nextElement();
+                        try {
+                            int xCoord = Integer.parseInt((String) aTokenizer.nextElement());
+                            int yCoord = Integer.parseInt((String) aTokenizer.nextElement());
+                            String regionOwner = (String) aTokenizer.nextElement();
 
-                    String regionName = (String) aTokenizer.nextElement();
-                    try {
-                        int xCoord = Integer.parseInt((String) aTokenizer.nextElement());
-                        int yCoord = Integer.parseInt((String) aTokenizer.nextElement());
-                        String regionOwner = (String) aTokenizer.nextElement();
+                             Region aRegion = regionService.createRegion(regionName,
+                                    xCoord,
+                                    yCoord,
+                                    regionOwner,
+                                    "OSgrid");
 
-                        Region aRegion = regionService.createRegion(regionName,
-                                xCoord,
-                                yCoord,
-                                regionOwner,
-                                "OSgrid");
-
-                        em.persist(aRegion);
-                    } catch (NumberFormatException e) {
-                        LOG.log(Level.WARNING, e.toString());
+                            em.persist(aRegion);
+                        } catch (NumberFormatException e) {
+                            LOG.log(Level.WARNING, e.toString());
+                        }
                     }
                 }
+
             }
 
             data.close();
@@ -119,15 +117,15 @@ public class CreateRegions extends HttpServlet {
 
             out.print("ok");
 
-
             // HTMLHelper.printHTMLFooter(out);
+
         } finally {
             out.close();
         }
     }
 
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">"
-    /** 
+// <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">"
+    /**
      * Handles the HTTP <code>GET</code> method.
      * @param request servlet request
      * @param response servlet response
@@ -139,6 +137,12 @@ public class CreateRegions extends HttpServlet {
             throws ServletException, IOException {
         try {
             processRequest(request, response);
+
+
+
+
+
+
         } catch (NotSupportedException ex) {
             Logger.getLogger(CreateRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (SystemException ex) {
@@ -150,6 +154,10 @@ public class CreateRegions extends HttpServlet {
         } catch (HeuristicRollbackException ex) {
             Logger.getLogger(CreateRegions.class.getName()).log(Level.SEVERE, null, ex);
         }
+
+
+
+
     }
 
     /** 
@@ -164,6 +172,12 @@ public class CreateRegions extends HttpServlet {
             throws ServletException, IOException {
         try {
             processRequest(request, response);
+
+
+
+
+
+
         } catch (NotSupportedException ex) {
             Logger.getLogger(CreateRegions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (SystemException ex) {
@@ -175,6 +189,10 @@ public class CreateRegions extends HttpServlet {
         } catch (HeuristicRollbackException ex) {
             Logger.getLogger(CreateRegions.class.getName()).log(Level.SEVERE, null, ex);
         }
+
+
+
+
     }
 
     /** 
@@ -184,6 +202,10 @@ public class CreateRegions extends HttpServlet {
     @Override
     public String getServletInfo() {
         return "Short description";
+
+
+
+
     }// </editor-fold>
     private static final Logger LOG = Logger.getLogger(CreateRegions.class.getName());
 }
