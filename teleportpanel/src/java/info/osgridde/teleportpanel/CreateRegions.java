@@ -67,7 +67,7 @@ public class CreateRegions extends HttpServlet {
 
             regionService.removeAllRegions();
 
-            URL myUrl = new URL("http://www.osgrid.org/index.php/regionlist");
+            URL myUrl = new URL("http://www.osgrid.org/index.php/regionlistfull");
             URLConnection conn = null;
             DataInputStream data = null;
             String line;
@@ -79,36 +79,54 @@ public class CreateRegions extends HttpServlet {
 
             data = new DataInputStream(conn.getInputStream());
 
+            String regionName = new String();
+            int xCoord = 0;
+            int yCoord = 0;
+            String regionOwner = new String();
+            boolean xCoordFound = false;
+            boolean isComplete = false;
+
             while ((line = data.readLine()) != null) {
-                if (line.startsWith("</tr><center><tr><td>")) {
-                    line = line.replaceAll("<tr>", "");
-                    line = line.replaceAll("</tr>", "");
-                    line = line.replaceAll("<center>", "");
-                    line = line.replaceAll(" align=center", "");
-                    line = line.replaceAll("/", "");
-                    line = line.replaceAll("<td><td>", ";");
-                    line = line.replaceAll("<td>", "");
-                    StringTokenizer aTokenizer = new StringTokenizer(line, ";");
-                    while (aTokenizer.hasMoreElements()) {
-                        String regionName = (String) aTokenizer.nextElement();
-                        try {
-                            int xCoord = Integer.parseInt((String) aTokenizer.nextElement());
-                            int yCoord = Integer.parseInt((String) aTokenizer.nextElement());
-                            String regionOwner = (String) aTokenizer.nextElement();
-
-                             Region aRegion = regionService.createRegion(regionName,
-                                    xCoord,
-                                    yCoord,
-                                    regionOwner,
-                                    "OSgrid");
-
-                            em.persist(aRegion);
-                        } catch (NumberFormatException e) {
-                            LOG.log(Level.WARNING, e.toString());
-                        }
+                try {
+                    if (line.startsWith("<td width='51%'>")) {
+                        line = line.replaceAll("<td width='51%'>", "");
+                        line = line.replaceAll("</td>", "");
+                        line = line.trim();
+                        regionName = line;
                     }
+                    if ((line.startsWith("<td width='10%' align=center>")) && (xCoordFound == false)) {
+                        line = line.replaceAll("<td width='10%' align=center>", "");
+                        line = line.replaceAll("</td>", "");
+                        line = line.trim();
+                        xCoord = Integer.parseInt(line);
+                        xCoordFound = true;
+                    }
+                    if ((line.startsWith("<td width='10%' align=center>")) && (xCoordFound == true)) {
+                        line = line.replaceAll("<td width='10%' align=center>", "");
+                        line = line.replaceAll("</td>", "");
+                        line = line.trim();
+                        yCoord = Integer.parseInt(line);
+                        xCoordFound = false;
+                    }
+                    if (line.startsWith("<td width='29%'>")) {
+                        line = line.replaceAll("<td width='29%'>", "");
+                        line = line.replaceAll("</td>", "");
+                        line = line.trim();
+                        regionOwner = line;
+                        isComplete = true;
+                    }
+                    if (isComplete) {
+                        Region aRegion = regionService.createRegion(regionName,
+                            xCoord,
+                            yCoord,
+                            regionOwner,
+                            "OSgrid");
+                        em.persist(aRegion);
+                        isComplete = false;
+                    }
+                } catch (NumberFormatException e) {
+                    LOG.log(Level.WARNING, e.toString());
                 }
-
             }
 
             data.close();
